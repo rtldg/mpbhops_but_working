@@ -22,8 +22,8 @@ public Plugin myinfo =
 #define SF_BUTTON_TOUCH_ACTIVATES   256 // Button fires when touched.
 #define BUTTON_FLAGS (SF_BUTTON_DONTMOVE | SF_BUTTON_TOUCH_ACTIVATES)
 
-#define HACKY_PROP "m_flElasticity" //"m_flWaveHeight"
-#define HACKY_PROP_DEFAULT 1.0 //0.0
+#define HACKY_TELEPORTER_ENT_PROP "m_flElasticity" //"m_flWaveHeight"
+#define HACKY_TELEPORTER_ENT_PROP_DEFAULT 1.0 //0.0
 
 #define TELEPORT_DELAY       0.06 // Max time a player can touch a bhop platform
 #define PLATTFORM_COOLDOWN   1.10 // Reset a bhop platform anyway until this cooldown lifts
@@ -102,7 +102,7 @@ Action Block_Touch(int block, int client)
 	{
 		if(time > (PLATTFORM_COOLDOWN + TELEPORT_DELAY))
 		{
-			int tele = EntRefToEntIndex(view_as<int>(GetEntPropFloat(block, Prop_Data, HACKY_PROP)));
+			int tele = EntRefToEntIndex(view_as<int>(GetEntPropFloat(block, Prop_Data, HACKY_TELEPORTER_ENT_PROP)));
 
 			if (tele > 0)
 			{
@@ -145,8 +145,7 @@ void Frame_HookButton(int ref)
 
 void HookBlock(int ent, bool isButton)
 {
-	// m_flWaveHeight will be 0.0 if we haven't hooked the block yet.
-	if (GetEntPropFloat(ent, Prop_Data, HACKY_PROP) == HACKY_PROP_DEFAULT)
+	if (GetEntPropFloat(ent, Prop_Data, HACKY_TELEPORTER_ENT_PROP) == HACKY_TELEPORTER_ENT_PROP_DEFAULT)
 	{
 		float origin[3], startpos[3], endpos[3];
 		GetEntPropVector(ent, Prop_Send, "m_vecOrigin", origin);
@@ -168,7 +167,7 @@ void HookBlock(int ent, bool isButton)
 
 		//LogToFile("test.log", "%d %d %f %f %f", ent, tele, origin[0], origin[1], origin[2]);
 
-		SetEntPropFloat(ent, Prop_Data, HACKY_PROP, view_as<float>(EntIndexToEntRef(tele)));
+		SetEntPropFloat(ent, Prop_Data, HACKY_TELEPORTER_ENT_PROP, view_as<float>(EntIndexToEntRef(tele)));
 		SetEntPropVector(ent, Prop_Data, "m_vecPosition2", startpos);
 		SetEntPropFloat(ent, Prop_Data, "m_flSpeed", 0.0);
 		SetEntProp(ent, Prop_Data, "m_spawnflags", isButton ? BUTTON_FLAGS : DOOR_FLAGS);
