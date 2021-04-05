@@ -167,6 +167,9 @@ void HookBlock(int ent, bool isButton)
 
 		//LogToFile("test.log", "%d %d %f %f %f", ent, tele, origin[0], origin[1], origin[2]);
 
+		if (tele <= MaxClients || !IsValidEntity(tele))
+			return;
+
 		SetEntPropFloat(ent, Prop_Data, HACKY_TELEPORTER_ENT_PROP, view_as<float>(EntIndexToEntRef(tele)));
 		SetEntPropVector(ent, Prop_Data, "m_vecPosition2", startpos);
 		SetEntPropFloat(ent, Prop_Data, "m_flSpeed", 0.0);
