@@ -33,6 +33,7 @@ Handle gH_Touch;
 int gI_LastBlock[MAXPLAYERS+1];
 float gF_PunishTime[MAXPLAYERS+1];
 float gF_LastJump[MAXPLAYERS+1];
+int gI_CurrentTraceEntity;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -122,7 +123,8 @@ bool TeleportFilter(int entity)
 
 	if (StrEqual(classname, "trigger_teleport"))
 	{
-		TR_ClipCurrentRayToEntity(MASK_ALL, entity);
+		//TR_ClipCurrentRayToEntity(MASK_ALL, entity);
+		gI_CurrentTraceEntity = entity;
 		return false;
 	}
 
@@ -158,12 +160,17 @@ void HookBlock(int ent, bool isButton)
 		if (isButton && (GetEntProp(ent, Prop_Data, "m_spawnflags") & SF_BUTTON_TOUCH_ACTIVATES) == 0)
 			return;
 
+		gI_CurrentTraceEntity = 0;
 		TR_EnumerateEntities(startpos, endpos, PARTITION_TRIGGER_EDICTS, RayType_EndPoint, TeleportFilter);
 
+		/*
 		if (!TR_DidHit())
 			return;
 
 		int tele = TR_GetEntityIndex();
+		*/
+
+		int tele = gI_CurrentTraceEntity;
 
 		//LogToFile("test.log", "%d %d %f %f %f", ent, tele, origin[0], origin[1], origin[2]);
 
