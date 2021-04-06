@@ -28,8 +28,6 @@ public Plugin myinfo =
 #define TELEPORT_DELAY       0.06 // Max time a player can touch a bhop platform
 #define PLATTFORM_COOLDOWN   1.10 // Reset a bhop platform anyway until this cooldown lifts
 
-#define BOOSTER_WAIT_MAX     0.01 // Hook boosters that have a wait under this value.
-
 bool gB_Late;
 Handle gH_Touch;
 int gI_LastBlock[MAXPLAYERS+1];
@@ -112,11 +110,10 @@ void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 	if (!StrEqual(classname, "func_door") && !StrEqual(classname, "func_button"))
 		return;
 
-	// only booster blocks are -1.0
-	if (GetEntPropFloat(lastGround, Prop_Data, HACKY_TELEPORTER_ENT_PROP) != -1.0)
+	// only booster blocks are -1
+	if (view_as<int>(GetEntPropFloat(lastGround, Prop_Data, HACKY_TELEPORTER_ENT_PROP)) != -1)
 		return;
 
-	LogToFile("test.log", "boost touch %f", GetEntPropFloat(lastGround, Prop_Data, "m_flSpeed"));
 	float vel[3];
 	GetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", vel);
 	vel[2] += GetEntPropFloat(lastGround, Prop_Data, "m_flSpeed");
@@ -140,7 +137,7 @@ Action Block_Touch_Teleport(int block, int client)
 	{
 		if(time > (PLATTFORM_COOLDOWN + TELEPORT_DELAY))
 		{
-			int tele = EntRefToEntIndex(RoundToZero(GetEntPropFloat(block, Prop_Data, HACKY_TELEPORTER_ENT_PROP)));
+			int tele = EntRefToEntIndex(view_as<int>(GetEntPropFloat(block, Prop_Data, HACKY_TELEPORTER_ENT_PROP)));
 
 			if (tele > 0)
 			{
@@ -152,22 +149,6 @@ Action Block_Touch_Teleport(int block, int client)
 
 	return Plugin_Handled;
 }
-
-/*
-Action Block_Touch_Boost(int block, int client)
-{
-	if (client < 1 || client > MaxClients)
-		return Plugin_Continue;
-
-	LogToFile("test.log", "boost touch %f", GetEntPropFloat(block, Prop_Data, "m_flSpeed"));
-	float vel[3];
-	GetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", vel);
-	vel[2] += GetEntPropFloat(block, Prop_Data, "m_flSpeed");
-	SetEntPropVector(client, Prop_Data, "m_vecBaseVelocity", vel);
-
-	return Plugin_Handled;
-}
-*/
 
 bool TeleportFilter(int entity)
 {
@@ -213,26 +194,32 @@ void HookBlock(int ent, bool isButton)
 
 		if (startpos[2] > endpos[2])
 		{
+			float mins[3], maxs[3];
+			GetEntPropVector(ent, Prop_Send, "m_vecMins", mins);
+			GetEntPropVector(ent, Prop_Send, "m_vecMaxs", maxs);
+
+			float tracestartpos[3];
+			tracestartpos[0] = startpos[0] + (mins[0] + maxs[0]) * 0.5;
+			tracestartpos[1] = startpos[1] + (mins[1] + maxs[1]) * 0.5;
+			tracestartpos[2] = startpos[2] + maxs[2];
+			endpos[2] += maxs[2];
+
 			gI_CurrentTraceEntity = 0;
-			TR_EnumerateEntities(startpos, endpos, PARTITION_TRIGGER_EDICTS, RayType_EndPoint, TeleportFilter);
+			TR_EnumerateEntities(tracestartpos, endpos, PARTITION_TRIGGER_EDICTS, RayType_EndPoint, TeleportFilter);
 
 			if (gI_CurrentTraceEntity <= MaxClients)
 				return;
 
-			hackyProp = float(EntIndexToEntRef(gI_CurrentTraceEntity));
+			hackyProp = view_as<float>(EntIndexToEntRef(gI_CurrentTraceEntity));
 		}
 		else if (startpos[2] < endpos[2])
 		{
 			float wait = GetEntPropFloat(ent, Prop_Data, "m_flWait");
 
-			if (wait > BOOSTER_WAIT_MAX || wait == 0.0)
+			if (wait <= 0.0)
 				return;
 
-			float speed = GetEntPropFloat(ent, Prop_Data, "m_flSpeed");
-			float distance = GetVectorDistance(startpos, endpos, false);
-			SetEntPropFloat(ent, Prop_Data, "m_flSpeed", speed+distance);
-
-			hackyProp = -1.0;
+			hackyProp = view_as<float>(-1);
 		}
 
 		//LogToFile("test.log", "%d %f %f %f %f", ent, hackyProp, startpos[0], startpos[1], startpos[2]);
@@ -246,11 +233,11 @@ void HookBlock(int ent, bool isButton)
 			AcceptEntityInput(ent, "Lock");
 	}
 
-	if (hackyProp == -1.0) // booster blocks are negative floats (highest bit set)
+	if (view_as<int>(hackyProp) == -1) // booster blocks
 	{
 		//SDKHook(ent, SDKHook_Touch, Block_Touch_Boost);
 	}
-	else // bhop blocks are ints without highest bit set
+	else
 	{
 		SDKHook(ent, SDKHook_Touch, Block_Touch_Teleport);
 	}
