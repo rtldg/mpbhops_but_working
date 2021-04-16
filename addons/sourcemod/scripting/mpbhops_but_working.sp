@@ -221,6 +221,10 @@ void HookBlock(int ent, bool isButton)
 
 			hackyProp = view_as<float>(-1);
 		}
+		else
+		{
+			return;
+		}
 
 		//LogToFile("test.log", "%d %f %f %f %f", ent, hackyProp, startpos[0], startpos[1], startpos[2]);
 
