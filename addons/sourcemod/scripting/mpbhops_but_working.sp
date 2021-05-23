@@ -12,7 +12,7 @@ public Plugin myinfo =
 	url = "https://github.com/rtldg/mpbhops_but_working"
 };
 
-#define DEBUG 1
+#define DEBUG 0
 
 #define SF_DOOR_PTOUCH       1024   // player touch opens
 #define SF_DOOR_LOCKED       2048   // Door is initially locked
@@ -69,13 +69,6 @@ public void OnPluginStart()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-#if DEBUG
-	if (entity == 104 || entity == 105) // debug adventure_final thing
-	{
-		LogToFile("test.log", "spawning %d %s", entity, classname);
-	}
-#endif
-
 	if (StrEqual(classname, "func_door"))
 	{
 		RequestFrame(Frame_HookDoor, EntIndexToEntRef(entity));
