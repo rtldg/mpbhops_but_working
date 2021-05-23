@@ -12,6 +12,8 @@ public Plugin myinfo =
 	url = "https://github.com/rtldg/mpbhops_but_working"
 };
 
+#define DEBUG 1
+
 #define SF_DOOR_PTOUCH       1024   // player touch opens
 #define SF_DOOR_LOCKED       2048   // Door is initially locked
 #define SF_DOOR_SILENT       4096   // Door plays no audible sound, and does not alert NPCs when opened
@@ -67,6 +69,13 @@ public void OnPluginStart()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
+#if DEBUG
+	if (entity == 104 || entity == 105) // debug adventure_final thing
+	{
+		LogToFile("test.log", "spawning %d %s", entity, classname);
+	}
+#endif
+
 	if (StrEqual(classname, "func_door"))
 	{
 		RequestFrame(Frame_HookDoor, EntIndexToEntRef(entity));
@@ -76,6 +85,19 @@ public void OnEntityCreated(int entity, const char[] classname)
 		RequestFrame(Frame_HookButton, EntIndexToEntRef(entity));
 	}
 }
+
+#if DEBUG
+public void OnEntityDestroyed(int entity)
+{
+	char classname[30];
+	GetEntityClassname(entity, classname, sizeof(classname));
+
+	if (StrEqual(classname, "func_door") || StrEqual(classname, "func_button"))
+	{
+		LogToFile("test.log", "deleting %d %s", entity, classname);
+	}
+}
+#endif
 
 public void OnClientConnected(int client)
 {
@@ -192,6 +214,10 @@ void HookBlock(int ent, bool isButton)
 		GetEntPropVector(ent, Prop_Data, "m_vecPosition1", startpos);
 		GetEntPropVector(ent, Prop_Data, "m_vecPosition2", endpos);
 
+#if DEBUG
+		LogToFile("test.log", "0 %d %f %f %f %f", ent, hackyProp, startpos[0], startpos[1], startpos[2]);
+#endif
+
 		if (startpos[2] > endpos[2])
 		{
 			float mins[3], maxs[3];
@@ -226,10 +252,12 @@ void HookBlock(int ent, bool isButton)
 			return;
 		}
 
-		//LogToFile("test.log", "%d %f %f %f %f", ent, hackyProp, startpos[0], startpos[1], startpos[2]);
+#if DEBUG
+		LogToFile("test.log", "1 %d 0x%X %f %f %f", ent, hackyProp, startpos[0], startpos[1], startpos[2]);
+#endif
 
 		SetEntPropFloat(ent, Prop_Data, HACKY_TELEPORTER_ENT_PROP, hackyProp);
-		SetEntPropVector(ent, Prop_Data, "m_vecPosition2", startpos);
+		//SetEntPropVector(ent, Prop_Data, "m_vecPosition2", startpos);
 		//SetEntPropFloat(ent, Prop_Data, "m_flSpeed", 0.0);
 		SetEntProp(ent, Prop_Data, "m_spawnflags", isButton ? BUTTON_FLAGS : DOOR_FLAGS);
 
