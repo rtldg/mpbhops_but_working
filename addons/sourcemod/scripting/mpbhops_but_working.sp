@@ -218,18 +218,19 @@ void HookBlock(int ent, bool isButton)
 		GetEntPropVector(ent, Prop_Send, "m_vecMins", mins);
 		GetEntPropVector(ent, Prop_Send, "m_vecMaxs", maxs);
 
-		float tracestartpos[3];
-		tracestartpos[0] = startpos[0] + (mins[0] + maxs[0]) * 0.5;
-		tracestartpos[1] = startpos[1] + (mins[1] + maxs[1]) * 0.5;
-		tracestartpos[2] = startpos[2] + maxs[2];
-		endpos[2] += maxs[2];
+		//float tracestartpos[3];
+		//tracestartpos[0] = startpos[0] + (mins[0] + maxs[0]) * 0.5;
+		//tracestartpos[1] = startpos[1] + (mins[1] + maxs[1]) * 0.5;
+		//tracestartpos[2] = startpos[2] + maxs[2];
+		//endpos[2] += maxs[2];
 
 #if DEBUG
 		LogToFile("test.log", "%f %f %f | %f %f %f", tracestartpos[0], tracestartpos[1], tracestartpos[2], endpos[0], endpos[1], endpos[2]);
 #endif
 
 		gI_CurrentTraceEntity = 0;
-		TR_EnumerateEntities(tracestartpos, endpos, PARTITION_TRIGGER_EDICTS, RayType_EndPoint, TeleportFilter);
+		//TR_EnumerateEntities(tracestartpos, endpos, PARTITION_TRIGGER_EDICTS, RayType_EndPoint, TeleportFilter);
+		TR_EnumerateEntitiesHull(startpos, endpos, mins, maxs, PARTITION_TRIGGER_EDICTS, TeleportFilter, 0);
 
 		if (gI_CurrentTraceEntity <= MaxClients)
 			return;
