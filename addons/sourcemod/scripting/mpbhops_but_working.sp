@@ -24,9 +24,6 @@ public Plugin myinfo =
 #define SF_BUTTON_TOUCH_ACTIVATES   256 // Button fires when touched.
 #define BUTTON_FLAGS (SF_BUTTON_DONTMOVE | SF_BUTTON_TOUCH_ACTIVATES)
 
-#define HACKY_TELEPORTER_ENT_PROP "m_flElasticity" //"m_flWaveHeight"
-#define HACKY_TELEPORTER_ENT_PROP_DEFAULT 1.0 //0.0
-
 #define TELEPORT_DELAY       0.06 // Max time a player can touch a bhop platform
 #define PLATTFORM_COOLDOWN   1.10 // Reset a bhop platform anyway until this cooldown lifts
 
@@ -37,6 +34,7 @@ float gF_PunishTime[MAXPLAYERS+1];
 float gF_LastJump[MAXPLAYERS+1];
 int gI_CurrentTraceEntity;
 int gI_LastGroundEntity[MAXPLAYERS+1];
+int gI_DoorTeleporters[4096];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -69,6 +67,9 @@ public void OnPluginStart()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
+	if (entity > 0 && entity < sizeof(gI_DoorTeleporters))
+		gI_DoorTeleporters[entity] = 0;
+
 	if (StrEqual(classname, "func_door"))
 	{
 		RequestFrame(Frame_HookDoor, EntIndexToEntRef(entity));
@@ -125,8 +126,8 @@ void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 	if (!StrEqual(classname, "func_door") && !StrEqual(classname, "func_button"))
 		return;
 
-	// only booster blocks are -1
-	if (view_as<int>(GetEntPropFloat(lastGround, Prop_Data, HACKY_TELEPORTER_ENT_PROP)) != -1)
+	// Mostly likely a booster block
+	if (gI_DoorTeleporters[lastGround] != 0)
 		return;
 
 	float vel[3];
@@ -152,7 +153,7 @@ Action Block_Touch_Teleport(int block, int client)
 	{
 		if(time > (PLATTFORM_COOLDOWN + TELEPORT_DELAY))
 		{
-			int tele = EntRefToEntIndex(view_as<int>(GetEntPropFloat(block, Prop_Data, HACKY_TELEPORTER_ENT_PROP)));
+			int tele = EntRefToEntIndex(gI_DoorTeleporters[block]);
 
 			if (tele > 0)
 			{
@@ -169,6 +170,10 @@ bool TeleportFilter(int entity)
 {
 	char classname[20];
 	GetEntityClassname(entity, classname, sizeof(classname));
+
+#if DEBUG
+	LogToFile("test.log", "%d %s", entity, classname);
+#endif
 
 	if (StrEqual(classname, "trigger_teleport"))
 	{
@@ -199,71 +204,59 @@ void HookBlock(int ent, bool isButton)
 	if (GetEntProp(ent, Prop_Data, "m_spawnflags") & (isButton ? SF_BUTTON_TOUCH_ACTIVATES : SF_DOOR_PTOUCH) == 0)
 		return;
 
-	float hackyProp = GetEntPropFloat(ent, Prop_Data, HACKY_TELEPORTER_ENT_PROP);
-
-	if (hackyProp == HACKY_TELEPORTER_ENT_PROP_DEFAULT)
-	{
-		float startpos[3], endpos[3];
-		GetEntPropVector(ent, Prop_Data, "m_vecPosition1", startpos);
-		GetEntPropVector(ent, Prop_Data, "m_vecPosition2", endpos);
+	float startpos[3], endpos[3];
+	GetEntPropVector(ent, Prop_Data, "m_vecPosition1", startpos);
+	GetEntPropVector(ent, Prop_Data, "m_vecPosition2", endpos);
 
 #if DEBUG
-		LogToFile("test.log", "0 %d %f %f %f %f", ent, hackyProp, startpos[0], startpos[1], startpos[2]);
+	LogToFile("test.log", "a %d %f %f %f | %f %f %f", ent, startpos[0], startpos[1], startpos[2], endpos[0], endpos[1], endpos[2]);
 #endif
 
-		if (startpos[2] > endpos[2])
-		{
-			float mins[3], maxs[3];
-			GetEntPropVector(ent, Prop_Send, "m_vecMins", mins);
-			GetEntPropVector(ent, Prop_Send, "m_vecMaxs", maxs);
+	if (startpos[2] > endpos[2])
+	{
+		float mins[3], maxs[3];
+		GetEntPropVector(ent, Prop_Send, "m_vecMins", mins);
+		GetEntPropVector(ent, Prop_Send, "m_vecMaxs", maxs);
 
-			float tracestartpos[3];
-			tracestartpos[0] = startpos[0] + (mins[0] + maxs[0]) * 0.5;
-			tracestartpos[1] = startpos[1] + (mins[1] + maxs[1]) * 0.5;
-			tracestartpos[2] = startpos[2] + maxs[2];
-			endpos[2] += maxs[2];
+		float tracestartpos[3];
+		tracestartpos[0] = startpos[0] + (mins[0] + maxs[0]) * 0.5;
+		tracestartpos[1] = startpos[1] + (mins[1] + maxs[1]) * 0.5;
+		tracestartpos[2] = startpos[2] + maxs[2];
+		endpos[2] += maxs[2];
 
-			gI_CurrentTraceEntity = 0;
-			TR_EnumerateEntities(tracestartpos, endpos, PARTITION_TRIGGER_EDICTS, RayType_EndPoint, TeleportFilter);
+#if DEBUG
+		LogToFile("test.log", "%f %f %f | %f %f %f", tracestartpos[0], tracestartpos[1], tracestartpos[2], endpos[0], endpos[1], endpos[2]);
+#endif
 
-			if (gI_CurrentTraceEntity <= MaxClients)
-				return;
+		gI_CurrentTraceEntity = 0;
+		TR_EnumerateEntities(tracestartpos, endpos, PARTITION_TRIGGER_EDICTS, RayType_EndPoint, TeleportFilter);
 
-			hackyProp = view_as<float>(EntIndexToEntRef(gI_CurrentTraceEntity));
-		}
-		else if (startpos[2] < endpos[2])
-		{
-			float wait = GetEntPropFloat(ent, Prop_Data, "m_flWait");
-
-			if (wait <= 0.0)
-				return;
-
-			hackyProp = view_as<float>(-1);
-		}
-		else
-		{
+		if (gI_CurrentTraceEntity <= MaxClients)
 			return;
-		}
 
-#if DEBUG
-		LogToFile("test.log", "1 %d 0x%X %f %f %f", ent, hackyProp, startpos[0], startpos[1], startpos[2]);
-#endif
-
-		SetEntPropFloat(ent, Prop_Data, HACKY_TELEPORTER_ENT_PROP, hackyProp);
-		//SetEntPropVector(ent, Prop_Data, "m_vecPosition2", startpos);
-		//SetEntPropFloat(ent, Prop_Data, "m_flSpeed", 0.0);
-		SetEntProp(ent, Prop_Data, "m_spawnflags", isButton ? BUTTON_FLAGS : DOOR_FLAGS);
-
-		if (!isButton)
-			AcceptEntityInput(ent, "Lock");
+		gI_DoorTeleporters[ent] = EntIndexToEntRef(gI_CurrentTraceEntity);
+		SDKHook(ent, SDKHook_Touch, Block_Touch_Teleport);
 	}
-
-	if (view_as<int>(hackyProp) == -1) // booster blocks
+	else if (startpos[2] < endpos[2])
 	{
-		//SDKHook(ent, SDKHook_Touch, Block_Touch_Boost);
+		float wait = GetEntPropFloat(ent, Prop_Data, "m_flWait");
+
+		if (wait <= 0.0)
+			return;
 	}
 	else
 	{
-		SDKHook(ent, SDKHook_Touch, Block_Touch_Teleport);
+		return;
 	}
+
+#if DEBUG
+	LogToFile("test.log", "b %d %f %f %f | %f %f %f", ent, startpos[0], startpos[1], startpos[2], endpos[0], endpos[1], endpos[2]);
+#endif
+
+	//SetEntPropVector(ent, Prop_Data, "m_vecPosition2", startpos);
+	//SetEntPropFloat(ent, Prop_Data, "m_flSpeed", 0.0);
+	SetEntProp(ent, Prop_Data, "m_spawnflags", isButton ? BUTTON_FLAGS : DOOR_FLAGS);
+
+	if (!isButton)
+		AcceptEntityInput(ent, "Lock");
 }
