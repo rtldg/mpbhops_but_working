@@ -25,7 +25,7 @@ public Plugin myinfo =
 #define BUTTON_FLAGS (SF_BUTTON_DONTMOVE | SF_BUTTON_TOUCH_ACTIVATES)
 
 #define TELEPORT_DELAY       0.06 // Max time a player can touch a bhop platform
-#define PLATTFORM_COOLDOWN   1.10 // Reset a bhop platform anyway until this cooldown lifts
+#define PLATTFORM_COOLDOWN   1.10 // Reset a bhop platform anyway when this cooldown lifts
 
 bool gB_Late;
 Handle gH_Touch;
