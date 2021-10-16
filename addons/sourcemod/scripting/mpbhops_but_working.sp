@@ -34,7 +34,7 @@ float gF_PunishTime[MAXPLAYERS+1];
 float gF_LastJump[MAXPLAYERS+1];
 int gI_CurrentTraceEntity;
 int gI_LastGroundEntity[MAXPLAYERS+1];
-int gI_DoorTeleporters[4096];
+int gI_DoorState[2048]; // 0 = empty, 1 = door-booster, anything else = ent-reference to teleporter
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -67,8 +67,8 @@ public void OnPluginStart()
 
 public void OnEntityCreated(int entity, const char[] classname)
 {
-	if (entity > 0 && entity < sizeof(gI_DoorTeleporters))
-		gI_DoorTeleporters[entity] = 0;
+	if (0 < entity < sizeof(gI_DoorState))
+		gI_DoorState[entity] = 0;
 
 	if (StrEqual(classname, "func_door"))
 	{
@@ -126,8 +126,7 @@ void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 	if (!StrEqual(classname, "func_door") && !StrEqual(classname, "func_button"))
 		return;
 
-	// Mostly likely a booster block
-	if (gI_DoorTeleporters[lastGround] != 0)
+	if (gI_DoorState[lastGround] != 1)
 		return;
 
 	float vel[3];
@@ -144,16 +143,16 @@ Action Block_Touch_Teleport(int block, int client)
 	float time = GetGameTime();
 	float diff = time - gF_PunishTime[client];
 
-	if(gI_LastBlock[client] != block || diff > PLATTFORM_COOLDOWN)
+	if (gI_LastBlock[client] != block || diff > PLATTFORM_COOLDOWN)
 	{
 		gI_LastBlock[client] = block;
 		gF_PunishTime[client] = time + TELEPORT_DELAY;
 	}
-	else if(diff > TELEPORT_DELAY)
+	else if (diff > TELEPORT_DELAY)
 	{
-		if(time > (PLATTFORM_COOLDOWN + TELEPORT_DELAY))
+		if (time > (PLATTFORM_COOLDOWN + TELEPORT_DELAY))
 		{
-			int tele = EntRefToEntIndex(gI_DoorTeleporters[block]);
+			int tele = EntRefToEntIndex(gI_DoorState[block]);
 
 			if (tele > 0)
 			{
@@ -224,7 +223,7 @@ void HookBlock(int ent, bool isButton)
 		//tracestartpos[2] = startpos[2] + maxs[2];
 		//endpos[2] += maxs[2];
 
-#if DEBUG
+#if DEBUG && 0
 		LogToFile("test.log", "%f %f %f | %f %f %f", tracestartpos[0], tracestartpos[1], tracestartpos[2], endpos[0], endpos[1], endpos[2]);
 #endif
 
@@ -235,7 +234,7 @@ void HookBlock(int ent, bool isButton)
 		if (gI_CurrentTraceEntity <= MaxClients)
 			return;
 
-		gI_DoorTeleporters[ent] = EntIndexToEntRef(gI_CurrentTraceEntity);
+		gI_DoorState[ent] = EntIndexToEntRef(gI_CurrentTraceEntity);
 		SDKHook(ent, SDKHook_Touch, Block_Touch_Teleport);
 	}
 	else if (startpos[2] < endpos[2])
@@ -244,6 +243,8 @@ void HookBlock(int ent, bool isButton)
 
 		if (wait <= 0.0)
 			return;
+
+		gI_DoorState[ent] = 1;
 	}
 	else
 	{
