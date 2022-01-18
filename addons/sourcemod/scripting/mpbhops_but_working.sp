@@ -3,7 +3,7 @@
 #include <sdktools>
 #include <sdkhooks>
 
-public Plugin myinfo = 
+public Plugin myinfo =
 {
 	name = "MPBHOPS, BUT WORKING",
 	author = "rtldg, DaFox",
@@ -259,6 +259,5 @@ void HookBlock(int ent, bool isButton)
 	//SetEntPropFloat(ent, Prop_Data, "m_flSpeed", 0.0);
 	SetEntProp(ent, Prop_Data, "m_spawnflags", isButton ? BUTTON_FLAGS : DOOR_FLAGS);
 
-	if (!isButton)
-		AcceptEntityInput(ent, "Lock");
+	AcceptEntityInput(ent, "Lock");
 }
