@@ -3,6 +3,14 @@
 #include <sdktools>
 #include <sdkhooks>
 
+#undef REQUIRE_PLUGIN
+
+#define BHOPTIMER 1
+#if BHOPTIMER
+#include <shavit/core>
+#include <shavit/checkpoints>
+#endif
+
 public Plugin myinfo =
 {
 	name = "MPBHOPS, BUT WORKING",
@@ -96,12 +104,40 @@ public void OnEntityDestroyed(int entity)
 public void OnClientConnected(int client)
 {
 	gI_LastBlock[client] = -1;
+	gF_PunishTime[client] = 0.0;
 }
 
 public void OnClientPutInServer(int client)
 {
 	SDKHook(client, SDKHook_GroundEntChangedPost, Hook_GroundEntChangedPost);
 }
+
+#if BHOPTIMER
+public void Shavit_OnCheckpointCacheSaved(int client, cp_cache_t cache, int target, int index)
+{
+	if (!IsFakeClient(target) && cache.bSegmented)
+	{
+		cache.randomshit.SetValue("mpbhops_punishtime", gF_PunishTime[target]);
+		cache.randomshit.SetValue("mpbhops_lastblock", gI_LastBlock[target]);
+	}
+}
+
+public void Shavit_OnCheckpointCacheLoaded(int client, cp_cache_t cache, int index)
+{
+	if (cache.bSegmented)
+	{
+		cache.randomshit.GetValue("mpbhops_punishtime", gF_PunishTime[client]);
+		cache.randomshit.GetValue("mpbhops_lastblock", gI_LastBlock[client]);
+	}
+}
+
+#if 0
+public Action Shavit_OnStart(int client, int track)
+{
+	gF_PunishTime[client] = 0.0;
+}
+#endif
+#endif
 
 public void Hook_GroundEntChangedPost(int client)
 {
@@ -140,7 +176,11 @@ Action Block_Touch_Teleport(int block, int client)
 	if (client < 1 || client > MaxClients)
 		return Plugin_Continue;
 
+#if BHOPTIMER
+	float time = Shavit_GetClientTime(client);
+#else
 	float time = GetGameTime();
+#endif
 	float diff = time - gF_PunishTime[client];
 
 	if (gI_LastBlock[client] != block || diff > PLATTFORM_COOLDOWN)
