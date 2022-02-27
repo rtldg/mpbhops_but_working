@@ -113,7 +113,7 @@ public void OnClientPutInServer(int client)
 }
 
 #if BHOPTIMER
-public void Shavit_OnCheckpointCacheSaved(int client, cp_cache_t cache, int target, int index)
+public void Shavit_OnCheckpointCacheSaved(int client, cp_cache_t cache, int index, int target)
 {
 	if (!IsFakeClient(target) && cache.bSegmented)
 	{
