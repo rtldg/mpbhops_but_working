@@ -117,8 +117,8 @@ public void Shavit_OnCheckpointCacheSaved(int client, cp_cache_t cache, int targ
 {
 	if (!IsFakeClient(target) && cache.bSegmented)
 	{
-		cache.randomshit.SetValue("mpbhops_punishtime", gF_PunishTime[target]);
-		cache.randomshit.SetValue("mpbhops_lastblock", gI_LastBlock[target]);
+		cache.customdata.SetValue("mpbhops_punishtime", gF_PunishTime[target]);
+		cache.customdata.SetValue("mpbhops_lastblock", gI_LastBlock[target]);
 	}
 }
 
@@ -126,8 +126,8 @@ public void Shavit_OnCheckpointCacheLoaded(int client, cp_cache_t cache, int ind
 {
 	if (cache.bSegmented)
 	{
-		cache.randomshit.GetValue("mpbhops_punishtime", gF_PunishTime[client]);
-		cache.randomshit.GetValue("mpbhops_lastblock", gI_LastBlock[client]);
+		cache.customdata.GetValue("mpbhops_punishtime", gF_PunishTime[client]);
+		cache.customdata.GetValue("mpbhops_lastblock", gI_LastBlock[client]);
 	}
 }
 
