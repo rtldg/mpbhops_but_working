@@ -15,7 +15,7 @@ public Plugin myinfo =
 {
 	name = "MPBHOPS, BUT WORKING",
 	author = "rtldg, DaFox",
-	description = "Prevents (oldschool) bhop plattform from moving down. But actually working.",
+	description = "Prevents oldschool bhop platforms from moving down. But actually working.",
 	version = "1.0",
 	url = "https://github.com/rtldg/mpbhops_but_working"
 };
