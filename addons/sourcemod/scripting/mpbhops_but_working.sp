@@ -39,7 +39,6 @@ bool gB_Late;
 Handle gH_Touch;
 int gI_LastBlock[MAXPLAYERS+1];
 float gF_PunishTime[MAXPLAYERS+1];
-float gF_LastJump[MAXPLAYERS+1];
 int gI_CurrentTraceEntity;
 int gI_LastGroundEntity[MAXPLAYERS+1];
 int gI_DoorState[2048]; // 0 = empty, 1 = door-booster, anything else = ent-reference to teleporter
@@ -148,8 +147,6 @@ public void Hook_GroundEntChangedPost(int client)
 void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
-
-	gF_LastJump[client] = GetGameTime();
 
 	int lastGround = EntRefToEntIndex(gI_LastGroundEntity[client]);
 
