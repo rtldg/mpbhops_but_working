@@ -174,7 +174,7 @@ Action Block_Touch_Teleport(int block, int client)
 		return Plugin_Continue;
 
 #if BHOPTIMER
-	float time = Shavit_GetClientTime(client);
+	float time = (Shavit_GetTimerStatus(client) == Timer_Stopped) ? GetGameTime() : Shavit_GetClientTime(client); // TODO: handle stopped timer & style timescale settings...
 #else
 	float time = GetGameTime();
 #endif
