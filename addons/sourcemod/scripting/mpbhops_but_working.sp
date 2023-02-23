@@ -42,6 +42,7 @@ float gF_PunishTime[MAXPLAYERS+1];
 int gI_CurrentTraceEntity;
 int gI_LastGroundEntity[MAXPLAYERS+1];
 int gI_DoorState[2048]; // 0 = empty, 1 = door-booster, anything else = ent-reference to teleporter
+bool gB_JumpHooked = false;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -58,7 +59,7 @@ public void OnPluginStart()
 	gH_Touch = EndPrepSDKCall();
 	CloseHandle(hGameConf);
 
-	HookEvent("player_jump", Player_Jump);
+	gB_JumpHooked = HookEventEx("player_jump", Player_Jump);
 
 	if (gB_Late)
 	{
@@ -147,7 +148,11 @@ public void Hook_GroundEntChangedPost(int client)
 void Player_Jump(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(event.GetInt("userid"));
+	DoJump(client);
+}
 
+void DoJump(int client)
+{
 	int lastGround = EntRefToEntIndex(gI_LastGroundEntity[client]);
 
 	if (lastGround <= MaxClients)
@@ -298,3 +303,20 @@ void HookBlock(int ent, bool isButton)
 
 	AcceptEntityInput(ent, "Lock");
 }
+
+#if BHOPTIMER
+// TF2 doesn't have player_jump. This is a quick way to do this for tf2 bhoptimer servers...
+// If you don't use bhoptimer but want to have DoJump() called still then you'll want to port the following snippet into this plugin:
+// https://github.com/PMArkive/random-shavit-bhoptimer-stuff/blob/main/test_tf2_checkjumpbutton__in_shavit-core.sp
+// As a note: it'd probably be good to do that CheckJumpButton stuff in bhoptimer so we don't have that `fSpeed[2] = 289.0;` thing... but the jump heights are different per TF2 class and I don't really want to figure that out so whatever...
+public void Shavit_Bhopstats_OnLeaveGround(int client, bool jumped, bool ladder)
+{
+	if (jumped && !ladder && !gB_JumpHooked) // aka tf2
+	{
+		float vel[3];
+		GetEntPropVector(client, Prop_Data, "m_vecAbsVelocity", vel);
+		if (vel[2] > 0.0) // not the best check but :/
+			DoJump(client);
+	}
+}
+#endif
