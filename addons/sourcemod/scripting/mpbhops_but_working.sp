@@ -16,7 +16,7 @@ public Plugin myinfo =
 	name = "MPBHOPS, BUT WORKING",
 	author = "rtldg, DaFox",
 	description = "Prevents oldschool bhop platforms from moving down. But actually working.",
-	version = "1.0",
+	version = "1.1",
 	url = "https://github.com/rtldg/mpbhops_but_working"
 };
 
@@ -115,7 +115,7 @@ public void OnClientPutInServer(int client)
 #if BHOPTIMER
 public void Shavit_OnCheckpointCacheSaved(int client, cp_cache_t cache, int index, int target)
 {
-	if (!IsFakeClient(target) && cache.bSegmented)
+	if (!IsFakeClient(target))
 	{
 		cache.customdata.SetValue("mpbhops_punishtime", gF_PunishTime[target]);
 		cache.customdata.SetValue("mpbhops_lastblock", gI_LastBlock[target]);
@@ -124,11 +124,8 @@ public void Shavit_OnCheckpointCacheSaved(int client, cp_cache_t cache, int inde
 
 public void Shavit_OnCheckpointCacheLoaded(int client, cp_cache_t cache, int index)
 {
-	if (cache.bSegmented)
-	{
-		cache.customdata.GetValue("mpbhops_punishtime", gF_PunishTime[client]);
-		cache.customdata.GetValue("mpbhops_lastblock", gI_LastBlock[client]);
-	}
+	cache.customdata.GetValue("mpbhops_punishtime", gF_PunishTime[client]);
+	cache.customdata.GetValue("mpbhops_lastblock", gI_LastBlock[client]);
 }
 
 #if 0
